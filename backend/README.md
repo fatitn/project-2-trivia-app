@@ -102,3 +102,58 @@ createdb trivia_test
 psql trivia_test < trivia.psql
 python test_flaskr.py
 ```
+## Documentation
+GET /categories
+GET /questions
+POST /questions
+POST /search
+DELETE /questions/<int:question_id>
+GET /categories/<int:category_id>/questions
+POST /quizzes
+Example
+GET /categories
+  * Returns all the categories
+  * URI:- http://127.0.0.1:5000/categories
+  * Response
+      * {
+      "categories": {
+          "1": "history",
+          "2": "science",
+          "3" : "Geography",
+          "4" : "History",
+          "5" : "Entertainment",
+          "6" : "Sports"
+          },
+      "success": true
+          }
+DELETE /questions/<int:id>
+  * Deletes question with given ID.
+  * URI:- http://127.0.0.1:5000/questions/12
+  * Response
+      * {
+              "id": 12,
+              "message": "Question deleted successfully ",
+              "success": true
+          }
+POST /questions
+  * Inserting a new question.
+  * URI:- http://127.0.0.1:5000/questions
+  * JSON file format
+      * {
+          "answer": "blue",
+          "category": "2",
+          "difficulty": 1,    
+          "id": 10,
+          "question": "What is the colour of sky"
+          }
+  * Response
+      * {
+          "question": {
+              "answer": "blue",
+              "category": "2",
+              "difficulty": 1,
+              "id": 17,
+              "question": "What is the colour of sky"
+                      },
+          "success": true
+       }
