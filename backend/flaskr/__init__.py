@@ -20,6 +20,14 @@ def paginate_questions(request, selection):
 
     return current_questions
 
+def get_categories():
+    # this function will search and return all categories, to simply i used this function
+    categories_query = Category.query.all()
+    categories = {}
+    for category in categories_query:
+        categories[category.id] = category.type
+    return categories    
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -43,21 +51,16 @@ def create_app(test_config=None):
     Create an endpoint to handle GET requests
     for all available categories.
     """
-    # GET categories route
+    # GET categories route, abort if no result on database otherwise put success
     @app.route("/categories", methods=["GET"])
     def get_all_categories():
-        if request.method == "GET":
-            categories = Category.query.order_by(Category.id).all()
-            my_category = {}
-
-            for cat in categories:
-                my_category[cat.id] = cat.type
-
-            if len(my_category) ==0:
+            categories = get_categories()
+            
+            if len(categories) ==0:
                 abort(404) 
 
             return jsonify({
-                'categories': my_category,
+                'categories': categories,
                 'success' : True
             })         
 
@@ -76,23 +79,19 @@ def create_app(test_config=None):
     # GET Question use pagination
     @app.route('/questions', methods=['GET'])
     def get_questions():
-        if request.method == "GET":
             questions = Question.query.all()
             paginated_questions = paginate_questions(request, questions)
+            categories = get_categories()
 
             if len(paginated_questions) == 0:
                 abort(404)
             
-            categories = Category.query.all()
-            my_category = {}
-
-            for cat in categories:
-                my_category[cat.id] = cat.type
+            
 
             return jsonify({
                 'success': True,
                 'total_questions': len(questions),
-                'categories': my_category,
+                'categories': categories,
                 'questions': paginated_questions
             })
 
@@ -220,29 +219,32 @@ def create_app(test_config=None):
     """
     @app.route('/quizzes', methods=['POST'])
     def play_game():
-        if request.method == "POST":
-            try:
-                body = request.get_json()
-                prev_questions = body.get('previous_questions', None)
-                category = body.get('quiz_category', None)
+        body = request.get_json()
+        prev_questions = body.get('previous_questions', None)
+        category = body.get('quiz_category', None)
 
-                cat_id = category['id']
-                next_question = None
+        if ((category is None) or (prev_questions is None)):
+         abort(422)
+
+       
+        cat_id = int(category['id'])
+        next_question = None
+        av_questions = []        
+        if cat_id == 0:
+            av_questions = Question.query.filter(Question.id.notin_((prev_questions))).all()
                 
-                if cat_id != 0:
-                    av_questions = Question.query.filter_by(category=cat_id).filter(Question.id.notin_((prev_questions))).all()    
-                else:
-                    av_questions = Question.query.filter(Question.id.notin_((prev_questions))).all()
+        else:
+            av_questions = Question.query.filter_by(category=cat_id).filter(Question.id.notin_((prev_questions))).all()  
                 
-                if len(av_questions) > 0:
-                    next_question = random.choice(av_questions).format()
+        if len(av_questions) > 0:
+            next_question = av_questions[random.randint(0, len(av_questions)-1)].format()
+            
                 
-                return jsonify({
-                    'question': next_question,
-                    'success': True,
-                })
-            except:
-                abort(422)
+        return jsonify({
+            'question': next_question,
+            'success': True,
+         })
+            
     """
     @TODO:
     Create error handlers for all expected errors
